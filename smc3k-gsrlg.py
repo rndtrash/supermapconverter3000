@@ -48,7 +48,6 @@ parser.add_argument('-d', '--diff', action='store_true', dest='diff_sounds', hel
 parser.add_argument('-c', '--create-folder', action='store_true', dest='cr_folder', help='Create output folder if it does not exist')
 parser.add_argument('-cl', '--classic-mode', action='store_true', dest='cm_override', help='Make overrides for classic mode')
 parser.add_argument('-t', '--dry-run', action='store_true', dest='dry', help='Do not modify files')
-parser.add_argument('-m', '--music', action='store_true', dest='music', help='Include music in GSR')
 
 args = parser.parse_args()
 
@@ -78,14 +77,6 @@ exit_if_is_not_folder(hl_sound_path)
 out_sound_path = os.path.join(out_path, 'sound', args.prefix)
 create_if_does_not_exist(out_sound_path)
 
-mod_media_path = os.path.join(mod_path, 'media')
-hl_media_path = os.path.join(hl_path, 'media')
-out_media_path = os.path.join(out_path, 'media', args.prefix)
-if args.music:
-	exit_if_is_not_folder(mod_media_path)
-	exit_if_is_not_folder(hl_media_path)
-	create_if_does_not_exist(out_media_path)
-
 ###
 
 # PLEASE NOTE: only sound file list is generated with recursive search!
@@ -104,20 +95,6 @@ else:
 
 print("Sounds that are going to be copied:", sounds)
 
-mod_music = []
-hl_music = []
-music_files = []
-if args.music:
-	mod_music = [f for f in os.listdir(mod_media_path) if os.path.isfile(os.path.join(mod_media_path, f))]
-	hl_music = [f for f in os.listdir(hl_media_path) if os.path.isfile(os.path.join(hl_media_path, f))]
-	if args.diff_sounds:
-		for music_file in mod_music:
-			if music_file in hl_music and not filecmp.cmp(os.path.join(mod_media_path, music_file), os.path.join(hl_media_path, music_file)):
-				music_files.append(music_file)
-	else:
-		music_files = mod_music
-	print("Music files that are going to be copied:", music_files)
-
 ###
 
 gsr_file = '## Generated with Super Mod Converter 3000\n'
@@ -127,15 +104,9 @@ for sound in sounds:
 		continue
 	if not args.dry:
 		shutil.copy(os.path.join(mod_sound_path, sound), os.path.join(out_sound_path, ntpath.split(sound)[0]))
-	gsr_file += '\"{}\" \"{}\"\n'.format(os.path.join('sound', sound), os.path.join('sound', args.prefix, sound))
+	gsr_file += '\"{}\" \"{}\"\n'.format(os.path.join(sound), os.path.join(args.prefix, sound))
 	if args.cm_override:
-		gsr_file += '\"{}\" \"{}\"\n'.format(os.path.join('sound', 'hlclassic', sound), os.path.join('sound', args.prefix, sound))
-
-if args.music:
-	for music_file in music_files:
-		if not args.dry:
-			shutil.copy(os.path.join(mod_media_path, music_file), out_media_path)
-		gsr_file += '\"{}\" \"{}\"\n'.format(os.path.join('media', music_file), os.path.join('media', args.prefix, music_file))
+		gsr_file += '\"{}\" \"{}\"\n'.format(os.path.join('hlclassic', sound), os.path.join(args.prefix, sound))
 
 if args.dry:
 	print('Your .gsr file:')
